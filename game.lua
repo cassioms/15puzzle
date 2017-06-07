@@ -8,10 +8,6 @@ local scene = composer.newScene()
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
 -- -----------------------------------------------------------------------------------
 
-local physics = require( "physics" )
-physics.start()
-physics.setGravity( 0, 0 )
-
 -- Configure image sheet
 local sheetOptions =
 {
@@ -115,40 +111,38 @@ local objectSheet = graphics.newImageSheet( "design/tileset.png", sheetOptions )
 -- Initialize variables
 local done = false
 
-local tileTable = {}
+local tileTable
 
 local timeText
-local timeElapsed = 0
+local timeElapsed
 local mainGroup
+local gameLoopTimer
+local timeTextDisplay
 
 local function updateText()
-    timeText = "Time in seconds: " .. timeElapsed
+    timeText.text = "Time in seconds: " .. timeElapsed
 end
 
-local function createAsteroid()
-    local newAsteroid = display.newImageRect( mainGroup, objectSheet, 1, 102, 85 )
-    table.insert( asteroidsTable, newAsteroid )
-    physics.addBody( newAsteroid, "dynamic", { radius=40, bounce=0.8 } )
-    newAsteroid.myName = "asteroid"
-    local whereFrom = math.random( 3 )
-    if ( whereFrom == 1 ) then
-        -- From the left
-        newAsteroid.x = -60
-        newAsteroid.y = math.random( 500 )
-        newAsteroid:setLinearVelocity( math.random( 40,120 ), math.random( 20,60 ) )
-    elseif ( whereFrom == 2 ) then
-        -- From the top
-        newAsteroid.x = math.random( display.contentWidth )
-        newAsteroid.y = -60
-        newAsteroid:setLinearVelocity( math.random( -40,40 ), math.random( 40,120 ) )
-    elseif ( whereFrom == 3 ) then
-        -- From the right
-        newAsteroid.x = display.contentWidth + 60
-        newAsteroid.y = math.random( 500 )
-        newAsteroid:setLinearVelocity( math.random( -120,-40 ), math.random( 20,60 ) )
+local function randomTileTable()
+    tileTable = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
+
+    local iterations = #tileTable
+    local j
+
+    for i = iterations, 2, -1 do
+        j = rand(i)
+        tileTable[i], tileTable[j] = tileTable[j], tileTable[i]
+    end
+end
+
+local function checkGameDone()
+    for i = 0, 16, 1 do
+        if (tileTable[i] != i) then
+            return
+        end
     end
 
-    newAsteroid:applyTorque( math.random( -6,6 ) )
+    done = true
 end
 
 local function fireLaser()
@@ -187,22 +181,8 @@ local function dragShip( event )
 end
 
 local function gameLoop()
-    -- Create new asteroid
-    createAsteroid()
-
-    -- Remove asteroids which have drifted off screen
-    for i = #asteroidsTable, 1, -1 do
-        local thisAsteroid = asteroidsTable[i]
-
-        if ( thisAsteroid.x < -100 or
-             thisAsteroid.x > display.contentWidth + 100 or
-             thisAsteroid.y < -100 or
-             thisAsteroid.y > display.contentHeight + 100 )
-        then
-            display.remove( thisAsteroid )
-            table.remove( asteroidsTable, i )
-        end
-    end
+    timeElapsed = timeElapsed + 1
+    updateText()
 end
 
 local function restoreShip()
@@ -221,59 +201,8 @@ local function restoreShip()
 end
 
 local function endGame()
-    composer.setVariable( "finalScore", score )
+    composer.setVariable( "finalTime", timeElapsed )
     composer.gotoScene( "highscores", { time=800, effect="crossFade" } )
-end
-
-local function onCollision( event )
-
-    if ( event.phase == "began" ) then
-        local obj1 = event.object1
-        local obj2 = event.object2
-
-        if ( ( obj1.myName == "laser" and obj2.myName == "asteroid" ) or
-             ( obj1.myName == "asteroid" and obj2.myName == "laser" ) )
-        then
-            -- Remove both the laser and asteroid
-            display.remove( obj1 )
-            display.remove( obj2 )
-
-            -- Play explosion sound!
-            audio.play( explosionSound )
-
-            for i = #asteroidsTable, 1, -1 do
-                if ( asteroidsTable[i] == obj1 or asteroidsTable[i] == obj2 ) then
-                    table.remove( asteroidsTable, i )
-                    break
-                end
-            end
-
-            -- Increase score
-            score = score + 100
-            scoreText.text = "Score: " .. score
-        elseif ( ( obj1.myName == "ship" and obj2.myName == "asteroid" ) or
-                 ( obj1.myName == "asteroid" and obj2.myName == "ship" ) )
-        then
-            if ( died == false ) then
-                died = true
-
-                -- Play explosion sound!
-                audio.play( explosionSound )
-
-                -- Update lives
-                lives = lives - 1
-                livesText.text = "Lives: " .. lives
-
-                if ( lives == 0 ) then
-                    display.remove( ship )
-                    timer.performWithDelay( 2000, endGame )
-                else
-                    ship.alpha = 0
-                    timer.performWithDelay( 1000, restoreShip )
-                end
-            end
-        end
-    end
 end
 
 -- -----------------------------------------------------------------------------------
@@ -282,43 +211,15 @@ end
 
 -- create()
 function scene:create( event )
-
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
-
-    physics.pause()  -- Temporarily pause the physics engine
-
-    -- Set up display groups
-    backGroup = display.newGroup()  -- Display group for the background image
-    sceneGroup:insert( backGroup )  -- Insert into the scene's view group
 
     mainGroup = display.newGroup()  -- Display group for the ship, asteroids, lasers, etc.
     sceneGroup:insert( mainGroup )  -- Insert into the scene's view group
 
-    uiGroup = display.newGroup()    -- Display group for UI objects like the score
-    sceneGroup:insert( uiGroup )    -- Insert into the scene's view group
-
-    -- Load the background
-    local background = display.newImageRect( backGroup, "background.png", 800, 1400 )
-    background.x = display.contentCenterX
-    background.y = display.contentCenterY
-
-    ship = display.newImageRect( mainGroup, objectSheet, 4, 98, 79 )
-    ship.x = display.contentCenterX
-    ship.y = display.contentHeight - 100
-    physics.addBody( ship, { radius=30, isSensor=true } )
-    ship.myName = "ship"
-
-    -- Display lives and score
-    livesText = display.newText( uiGroup, "Lives: " .. lives, 200, 80, native.systemFont, 36 )
-    scoreText = display.newText( uiGroup, "Score: " .. score, 400, 80, native.systemFont, 36 )
-
-    ship:addEventListener( "tap", fireLaser )
-    ship:addEventListener( "touch", dragShip )
-
-    explosionSound = audio.loadSound( "audio/explosion.wav" )
-    fireSound = audio.loadSound( "audio/fire.wav" )
-    musicTrack = audio.loadStream( "audio/80s-Space-Game_Looping.wav")
+    -- Display timer
+    timeElapsed = 0
+    timeText = display.newText( mainGroup, "Time in seconds: " .. timeElapsed, 200, 80, native.systemFont, 36 )
 end
 
 
@@ -333,12 +234,7 @@ function scene:show( event )
 
 	elseif ( phase == "did" ) then
         -- Code here runs when the scene is entirely on screen
-        physics.start()
-        Runtime:addEventListener( "collision", onCollision )
-        gameLoopTimer = timer.performWithDelay( 500, gameLoop, 0 )
-
-        -- Start the music!
-        audio.play( musicTrack, { channel=1, loops=-1 } )
+        gameLoopTimer = timer.performWithDelay( 1000, gameLoop, 0 )
 	end
 end
 
@@ -351,17 +247,9 @@ function scene:hide( event )
 
 	if ( phase == "will" ) then
 		-- Code here runs when the scene is on screen (but is about to go off screen)
-
         timer.cancel( gameLoopTimer )
-
 	elseif ( phase == "did" ) then
         -- Code here runs immediately after the scene goes entirely off screen
-        Runtime:removeEventListener( "collision", onCollision )
-        physics.pause()
-
-        -- Stop the music!
-        audio.stop( 1 )
-
         composer.removeScene( "game" )
 	end
 end
@@ -369,15 +257,8 @@ end
 
 -- destroy()
 function scene:destroy( event )
-
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view
-
-    -- Dispose audio!
-    audio.dispose( explosionSound )
-    audio.dispose( fireSound )
-    audio.dispose( musicTrack )
-
 end
 
 
