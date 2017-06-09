@@ -1,6 +1,5 @@
 
 local composer = require( "composer" )
-
 local scene = composer.newScene()
 
 -- -----------------------------------------------------------------------------------
@@ -108,19 +107,26 @@ local sheetOptions =
 
 local objectSheet = graphics.newImageSheet( "design/tileset.png", sheetOptions )
 
--- Initialize variables
-local done = false
-
 local tileTable
+local tileObjects = {}
+local zeroPosition = {}
 
 local timeText
 local timeElapsed
 local mainGroup
 local gameLoopTimer
 local timeTextDisplay
+local offsetWidth = (768 - 512) / 2
+local offsetHeight = (1024 - 512) / 2
 
 local function updateText()
     timeText.text = "Time in seconds: " .. timeElapsed
+end
+
+local function printTable()
+    for i = 1, #tileTable, 1 do
+        print("Tile table[" .. i .. "] = " .. tileTable[i])
+    end
 end
 
 local function randomTileTable()
@@ -130,53 +136,26 @@ local function randomTileTable()
     local j
 
     for i = iterations, 2, -1 do
-        j = rand(i)
+        j = math.random(i)
         tileTable[i], tileTable[j] = tileTable[j], tileTable[i]
     end
+
+    printTable()
 end
 
 local function checkGameDone()
-    for i = 0, 16, 1 do
-        if (tileTable[i] != i) then
-            return
+    local done = true
+    for i = 1, 16, 1 do
+        if (tileTable[i] ~= i - 1) then
+            done = false
+            break
         end
     end
 
-    done = true
-end
-
-local function fireLaser()
-    -- Play fire sound!
-    audio.play( fireSound )
-
-    local newLaser = display.newImageRect( mainGroup, objectSheet, 5, 14, 40 )
-    physics.addBody( newLaser, "dynamic", { isSensor=true } )
-    newLaser.isBullet = true
-    newLaser.myName = "laser"
-
-    newLaser.x = ship.x
-    newLaser.y = ship.y
-    newLaser:toBack()
-
-    transition.to( newLaser, { y=-40, time=500,
-        onComplete = function() display.remove( newLaser ) end
-    } )
-end
-
-local function dragShip( event )
-    local ship = event.target
-    local phase = event.phase
-    if ( "began" == phase ) then
-        -- Set touch focus on the ship
-        display.currentStage:setFocus( ship )
-        -- Store initial offset position
-        ship.touchOffsetX = event.x - ship.x
-    elseif ( "moved" == phase ) then
-        -- Move the ship to the new touch position
-        ship.x = event.x - ship.touchOffsetX
-    elseif ( "ended" == phase or "cancelled" == phase ) then
-        -- Release touch focus on the ship
-        display.currentStage:setFocus( nil )
+    if (done) then
+        timer.cancel( gameLoopTimer )
+        timeText = display.newText( mainGroup, "You win!", display.contentCenterX, display.contentCenterY, native.systemFont, 36 )
+        timer.performWithDelay( 2000, endGame )
     end
 end
 
@@ -185,24 +164,73 @@ local function gameLoop()
     updateText()
 end
 
-local function restoreShip()
-
-    ship.isBodyActive = false
-    ship.x = display.contentCenterX
-    ship.y = display.contentHeight - 100
-
-    -- Fade in the ship
-    transition.to( ship, { alpha=1, time=4000,
-        onComplete = function()
-            ship.isBodyActive = true
-            died = false
-        end
-    } )
-end
-
 local function endGame()
     composer.setVariable( "finalTime", timeElapsed )
     composer.gotoScene( "highscores", { time=800, effect="crossFade" } )
+end
+
+local function swap(x)
+    local xIndex = 1
+    local zeroIndex = 1
+    for i = 1, #tileTable, 1 do
+        if (x == tileTable[i]) then
+            xIndex = i
+            break
+        end
+    end
+
+    for i = 1, #tileTable, 1 do
+        if (tileTable[i] == 0) then
+            zeroIndex = i
+            break
+        end
+    end
+
+    tileTable[xIndex], tileTable[zeroIndex] = tileTable[zeroIndex], tileTable[xIndex]
+end
+
+local function moveObject(event)
+    local numberObj = event.target
+    local oldX = numberObj.x
+    local oldY = numberObj.y
+
+    local number = numberObj.myValue
+    transition.to( numberObj, {
+        x = zeroPosition.x, y = zeroPosition.y, time = 500
+    } )
+
+    swap(number)
+    zeroPosition.x = oldX
+    zeroPosition.y = oldY
+
+    printTable()
+    checkGameDone()
+end
+
+local function showTableOnScreen()
+    local line = 0
+    local column = 0
+    for i = 1, #tileTable, 1 do
+        if (tileTable[i] ~= 0) then
+            local newTile = display.newImageRect( mainGroup, objectSheet, tileTable[i], 128, 128 )
+            newTile.x = offsetWidth + 64 + (column * 128)
+            newTile.y = offsetHeight + 64 + (line * 128)
+            newTile.myValue = tileTable[i]
+            table.insert(tileObjects, newTile)
+
+            --TODO adicionar evento somente para objetos perto do tile vazio '0'
+            newTile:addEventListener( "tap", moveObject )
+        else
+            zeroPosition.x = offsetWidth + 64 + (column * 128)
+            zeroPosition.y = offsetHeight + 64 + (line * 128)
+        end
+
+        column = column + 1
+        if (column % 4 == 0) then
+            column = 0
+            line = line + 1
+        end
+    end
 end
 
 -- -----------------------------------------------------------------------------------
@@ -219,9 +247,8 @@ function scene:create( event )
 
     -- Display timer
     timeElapsed = 0
-    timeText = display.newText( mainGroup, "Time in seconds: " .. timeElapsed, 200, 80, native.systemFont, 36 )
+    timeText = display.newText( mainGroup, "Time in seconds: " .. timeElapsed, display.contentCenterX, 80, native.systemFont, 36 )
 end
-
 
 -- show()
 function scene:show( event )
@@ -235,6 +262,8 @@ function scene:show( event )
 	elseif ( phase == "did" ) then
         -- Code here runs when the scene is entirely on screen
         gameLoopTimer = timer.performWithDelay( 1000, gameLoop, 0 )
+        randomTileTable()
+        showTableOnScreen()
 	end
 end
 
@@ -247,7 +276,6 @@ function scene:hide( event )
 
 	if ( phase == "will" ) then
 		-- Code here runs when the scene is on screen (but is about to go off screen)
-        timer.cancel( gameLoopTimer )
 	elseif ( phase == "did" ) then
         -- Code here runs immediately after the scene goes entirely off screen
         composer.removeScene( "game" )
