@@ -129,6 +129,7 @@ local function printTable()
     end
 end
 
+--TODO Acertar geracao do jogo para ficar sempre possivel de solucao
 local function randomTileTable()
     tileTable = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
 
@@ -145,10 +146,19 @@ end
 
 local function checkGameDone()
     local done = true
-    for i = 1, 16, 1 do
+    for i = 2, 16, 1 do
         if (tileTable[i] ~= i - 1) then
             done = false
             break
+        end
+    end
+
+    if (not done) then
+        for i = 1, 15, 1 do
+            if (tileTable[i] ~= i) then
+                done = false
+                break
+            end
         end
     end
 
@@ -189,22 +199,29 @@ local function swap(x)
     tileTable[xIndex], tileTable[zeroIndex] = tileTable[zeroIndex], tileTable[xIndex]
 end
 
+local function distance(x1, y1, x2, y2)
+    return math.abs(x1 - x2) + math.abs(y1 - y2)
+end
+
 local function moveObject(event)
     local numberObj = event.target
     local oldX = numberObj.x
     local oldY = numberObj.y
 
     local number = numberObj.myValue
-    transition.to( numberObj, {
-        x = zeroPosition.x, y = zeroPosition.y, time = 500
-    } )
 
-    swap(number)
-    zeroPosition.x = oldX
-    zeroPosition.y = oldY
+    if (distance(oldX, oldY, zeroPosition.x, zeroPosition.y) == 128) then
+        transition.to( numberObj, {
+            x = zeroPosition.x, y = zeroPosition.y, time = 200
+        } )
 
-    printTable()
-    checkGameDone()
+        swap(number)
+        zeroPosition.x = oldX
+        zeroPosition.y = oldY
+
+        printTable()
+        checkGameDone()
+    end
 end
 
 local function showTableOnScreen()
