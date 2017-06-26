@@ -129,16 +129,32 @@ local function printTable()
     end
 end
 
---TODO Acertar geracao do jogo para ficar sempre possivel de solucao
-local function randomTileTable()
-    tileTable = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
+local function countInversions()
+    local inversions = 0
+    for i = 1, #tileTable - 2, 1 do
+        for j = i + 1, #tileTable - 1, 1 do
+            if (tileTable[i] > tileTable[j]) then
+                inversions = inversions + 1
+            end
+        end
+    end
 
-    local iterations = #tileTable
+    return inversions
+end
+
+local function randomTileTable()
+    tileTable = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0}
+
+    local iterations = #tileTable - 1
     local j
 
     for i = iterations, 2, -1 do
         j = math.random(i)
         tileTable[i], tileTable[j] = tileTable[j], tileTable[i]
+    end
+
+    if (countInversions() % 2 == 1) then
+        tileTable[14], tileTable[15] = tileTable[15], tileTable[14]
     end
 
     printTable()
