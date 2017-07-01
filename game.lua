@@ -1,6 +1,6 @@
-
-local composer = require( "composer" )
+local composer = require("composer")
 local scene = composer.newScene()
+local solutions = require("scripts.solutions")
 
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
@@ -105,7 +105,7 @@ local sheetOptions =
     },
 }
 
-local objectSheet = graphics.newImageSheet( "design/tileset.png", sheetOptions )
+local objectSheet = graphics.newImageSheet("design/tileset.png", sheetOptions)
 
 local tileTable
 local tileObjects = {}
@@ -160,39 +160,24 @@ local function randomTileTable()
     printTable()
 end
 
-local function checkGameDone()
-    local done = true
-    for i = 2, 16, 1 do
-        if (tileTable[i] ~= i - 1) then
-            done = false
-            break
-        end
-    end
+local function endGame()
+    composer.setVariable("finalTime", timeElapsed)
+    composer.gotoScene("besttimes", {time=800, effect="crossFade"})
+end
 
-    if (not done) then
-        for i = 1, 15, 1 do
-            if (tileTable[i] ~= i) then
-                done = false
-                break
-            end
-        end
-    end
+local function checkGameDone()
+    local done = solutions.isSolution(tileTable)
 
     if (done) then
-        timer.cancel( gameLoopTimer )
-        timeText = display.newText( mainGroup, "You win!", display.contentCenterX, display.contentCenterY, native.systemFont, 36 )
-        timer.performWithDelay( 2000, endGame )
+        timer.cancel(gameLoopTimer)
+        timeText = display.newText(mainGroup, "You win!", display.contentCenterX, display.contentCenterY, native.systemFont, 36)
+        timer.performWithDelay(2000, endGame)
     end
 end
 
 local function gameLoop()
     timeElapsed = timeElapsed + 1
     updateText()
-end
-
-local function endGame()
-    composer.setVariable( "finalTime", timeElapsed )
-    composer.gotoScene( "highscores", { time=800, effect="crossFade" } )
 end
 
 local function swap(x)
@@ -251,8 +236,7 @@ local function showTableOnScreen()
             newTile.myValue = tileTable[i]
             table.insert(tileObjects, newTile)
 
-            --TODO adicionar evento somente para objetos perto do tile vazio '0'
-            newTile:addEventListener( "tap", moveObject )
+            newTile:addEventListener("tap", moveObject)
         else
             zeroPosition.x = offsetWidth + 64 + (column * 128)
             zeroPosition.y = offsetHeight + 64 + (line * 128)
@@ -271,30 +255,30 @@ end
 -- -----------------------------------------------------------------------------------
 
 -- create()
-function scene:create( event )
+function scene:create(event)
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
     mainGroup = display.newGroup()  -- Display group for the ship, asteroids, lasers, etc.
-    sceneGroup:insert( mainGroup )  -- Insert into the scene's view group
+    sceneGroup:insert(mainGroup)  -- Insert into the scene's view group
 
     -- Display timer
     timeElapsed = 0
-    timeText = display.newText( mainGroup, "Time in seconds: " .. timeElapsed, display.contentCenterX, 80, native.systemFont, 36 )
+    timeText = display.newText(mainGroup, "Time in seconds: " .. timeElapsed, display.contentCenterX, 80, native.systemFont, 36)
 end
 
 -- show()
-function scene:show( event )
+function scene:show(event)
 
 	local sceneGroup = self.view
 	local phase = event.phase
 
-	if ( phase == "will" ) then
+	if (phase == "will") then
 		-- Code here runs when the scene is still off screen (but is about to come on screen)
 
-	elseif ( phase == "did" ) then
+	elseif (phase == "did") then
         -- Code here runs when the scene is entirely on screen
-        gameLoopTimer = timer.performWithDelay( 1000, gameLoop, 0 )
+        gameLoopTimer = timer.performWithDelay(1000, gameLoop, 0)
         randomTileTable()
         showTableOnScreen()
 	end
@@ -302,7 +286,7 @@ end
 
 
 -- hide()
-function scene:hide( event )
+function scene:hide(event)
 
 	local sceneGroup = self.view
 	local phase = event.phase
@@ -311,13 +295,13 @@ function scene:hide( event )
 		-- Code here runs when the scene is on screen (but is about to go off screen)
 	elseif ( phase == "did" ) then
         -- Code here runs immediately after the scene goes entirely off screen
-        composer.removeScene( "game" )
+        composer.removeScene("game")
 	end
 end
 
 
 -- destroy()
-function scene:destroy( event )
+function scene:destroy(event)
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view
 end
@@ -326,10 +310,10 @@ end
 -- -----------------------------------------------------------------------------------
 -- Scene event function listeners
 -- -----------------------------------------------------------------------------------
-scene:addEventListener( "create", scene )
-scene:addEventListener( "show", scene )
-scene:addEventListener( "hide", scene )
-scene:addEventListener( "destroy", scene )
+scene:addEventListener("create", scene)
+scene:addEventListener("show", scene)
+scene:addEventListener("hide", scene)
+scene:addEventListener("destroy", scene)
 -- -----------------------------------------------------------------------------------
 
 return scene

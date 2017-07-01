@@ -1,10 +1,10 @@
-local composer = require( "composer" )
+local composer = require("composer")
 
 -- Hide status bar
-display.setStatusBar( display.HiddenStatusBar )
+display.setStatusBar(display.HiddenStatusBar)
 
 -- Seed the random number generator
-math.randomseed( os.time() )
+math.randomseed(os.time())
 
 --No audio for now
 --audio.setVolume( 0.3 )
@@ -14,4 +14,4 @@ math.randomseed( os.time() )
 --audio.setVolume( 0.1, { channel=1 } )
 
 -- Go to the menu screen
-composer.gotoScene( "menu" )
+composer.gotoScene("menu")
