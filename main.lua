@@ -14,4 +14,4 @@ math.randomseed(os.time())
 --audio.setVolume( 0.1, { channel=1 } )
 
 -- Go to the menu screen
-composer.gotoScene("menu")
+composer.gotoScene("scripts.menu")

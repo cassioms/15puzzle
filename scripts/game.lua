@@ -162,7 +162,7 @@ end
 
 local function endGame()
     composer.setVariable("finalTime", timeElapsed)
-    composer.gotoScene("besttimes", {time=800, effect="crossFade"})
+    composer.gotoScene("scripts.besttimes", {time=800, effect="crossFade"})
 end
 
 local function checkGameDone()
