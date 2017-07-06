@@ -1,6 +1,8 @@
 local composer = require("composer")
 local scene = composer.newScene()
 local solutions = require("scripts.solutions")
+local bgLoader = require("scripts.background")
+local defaults = require("scripts.defaults")
 
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
@@ -113,11 +115,13 @@ local zeroPosition = {}
 
 local timeText
 local timeElapsed
+local bgGroup
 local mainGroup
 local gameLoopTimer
 local timeTextDisplay
-local offsetWidth = (768 - 512) / 2
-local offsetHeight = (1024 - 512) / 2
+local offsetWidth = (768 - 512 - 10) / 2
+local offsetHeight = (1024 - 512 - 10) / 2
+local isMoving = false
 
 local function updateText()
     timeText.text = "Time in seconds: " .. timeElapsed
@@ -170,7 +174,8 @@ local function checkGameDone()
 
     if (done) then
         timer.cancel(gameLoopTimer)
-        timeText = display.newText(mainGroup, "You win!", display.contentCenterX, display.contentCenterY, native.systemFont, 36)
+        timeText = display.newText(mainGroup, "You win!", display.contentCenterX, display.contentCenterY, native.systemFont, defaults.font.size * 1.2)
+        timeText:setFillColor(defaults.font.color.red, defaults.font.color.green, defaults.font.color.blue)
         timer.performWithDelay(2000, endGame)
     end
 end
@@ -205,23 +210,26 @@ local function distance(x1, y1, x2, y2)
 end
 
 local function moveObject(event)
-    local numberObj = event.target
-    local oldX = numberObj.x
-    local oldY = numberObj.y
+    if (not isMoving) then
+        isMoving = true
+        local numberObj = event.target
+        local oldX = numberObj.x
+        local oldY = numberObj.y
 
-    local number = numberObj.myValue
+        local number = numberObj.myValue
 
-    if (distance(oldX, oldY, zeroPosition.x, zeroPosition.y) == 128) then
-        transition.to( numberObj, {
-            x = zeroPosition.x, y = zeroPosition.y, time = 200
-        } )
+        if (distance(oldX, oldY, zeroPosition.x, zeroPosition.y) == 130) then
+            transition.to( numberObj, {
+                x = zeroPosition.x, y = zeroPosition.y, time = 150
+            } )
 
-        swap(number)
-        zeroPosition.x = oldX
-        zeroPosition.y = oldY
+            swap(number)
+            zeroPosition.x = oldX
+            zeroPosition.y = oldY
 
-        printTable()
-        checkGameDone()
+            checkGameDone()
+        end
+        isMoving = false
     end
 end
 
@@ -230,16 +238,16 @@ local function showTableOnScreen()
     local column = 0
     for i = 1, #tileTable, 1 do
         if (tileTable[i] ~= 0) then
-            local newTile = display.newImageRect( mainGroup, objectSheet, tileTable[i], 128, 128 )
-            newTile.x = offsetWidth + 64 + (column * 128)
-            newTile.y = offsetHeight + 64 + (line * 128)
+            local newTile = display.newImageRect(mainGroup, objectSheet, tileTable[i], 128, 128)
+            newTile.x = offsetWidth + 64 + (column * 130)
+            newTile.y = offsetHeight + 64 + (line * 130)
             newTile.myValue = tileTable[i]
             table.insert(tileObjects, newTile)
 
             newTile:addEventListener("tap", moveObject)
         else
-            zeroPosition.x = offsetWidth + 64 + (column * 128)
-            zeroPosition.y = offsetHeight + 64 + (line * 128)
+            zeroPosition.x = offsetWidth + 64 + (column * 130)
+            zeroPosition.y = offsetHeight + 64 + (line * 130)
         end
 
         column = column + 1
@@ -259,12 +267,12 @@ function scene:create(event)
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
-    mainGroup = display.newGroup()  -- Display group for the ship, asteroids, lasers, etc.
-    sceneGroup:insert(mainGroup)  -- Insert into the scene's view group
+    bgGroup = display.newGroup()
+    mainGroup = display.newGroup()
 
-    -- Display timer
-    timeElapsed = 0
-    timeText = display.newText(mainGroup, "Time in seconds: " .. timeElapsed, display.contentCenterX, 80, native.systemFont, 36)
+    sceneGroup:insert(bgGroup)
+    sceneGroup:insert(mainGroup)
+
 end
 
 -- show()
@@ -280,7 +288,13 @@ function scene:show(event)
         -- Code here runs when the scene is entirely on screen
         gameLoopTimer = timer.performWithDelay(1000, gameLoop, 0)
         randomTileTable()
+        bgLoader.loadBackground(bgGroup)
         showTableOnScreen()
+
+        -- Display timer
+        timeElapsed = 0
+        timeText = display.newText(mainGroup, "Time in seconds: " .. timeElapsed, display.contentCenterX, 80, native.systemFont, defaults.font.size * 0.8)
+        timeText:setFillColor(defaults.font.color.red, defaults.font.color.green, defaults.font.color.blue)
 	end
 end
 

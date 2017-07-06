@@ -1,5 +1,6 @@
-
-local composer = require( "composer" )
+local composer = require("composer")
+local bgLoader = require("scripts.background")
+local defaults = require("scripts.defaults")
 
 local scene = composer.newScene()
 
@@ -26,14 +27,16 @@ function scene:create(event)
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
-    local title = display.newText(sceneGroup, "15 puzzle", display.contentCenterX, 200, native.systemFont, 44)
-    title:setFillColor(0.82, 0.86, 1)
+    bgLoader.loadBackground(sceneGroup)
 
-    local playButton = display.newText(sceneGroup, "Play", display.contentCenterX, 700, native.systemFont, 44)
-    playButton:setFillColor(0.82, 0.86, 1)
+    local title = display.newText(sceneGroup, "15 puzzle", display.contentCenterX, 200, native.systemFont, defaults.font.size)
+    title:setFillColor(defaults.font.color.red, defaults.font.color.green, defaults.font.color.blue)
 
-    local highScoresButton = display.newText(sceneGroup, "Best times", display.contentCenterX, 810, native.systemFont, 44)
-    highScoresButton:setFillColor(0.82, 0.86, 1)
+    local playButton = display.newText(sceneGroup, "Play", display.contentCenterX, 700, native.systemFont, defaults.font.size)
+    playButton:setFillColor(defaults.font.color.red, defaults.font.color.green, defaults.font.color.blue)
+
+    local highScoresButton = display.newText(sceneGroup, "Best times", display.contentCenterX, 810, native.systemFont, defaults.font.size)
+    highScoresButton:setFillColor(defaults.font.color.red, defaults.font.color.green, defaults.font.color.blue)
 
     playButton:addEventListener("tap", gotoGame)
     highScoresButton:addEventListener("tap", gotoBestTimes)
