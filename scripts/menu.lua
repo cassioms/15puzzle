@@ -1,21 +1,9 @@
 local composer = require("composer")
 local bgLoader = require("scripts.background")
 local defaults = require("scripts.defaults")
+local scenes = require("scripts.scenes")
 
 local scene = composer.newScene()
-
--- -----------------------------------------------------------------------------------
--- Code outside of the scene event functions below will only be executed ONCE unless
--- the scene is removed entirely (not recycled) via "composer.removeScene()"
--- -----------------------------------------------------------------------------------
-
-local function gotoGame()
-    composer.gotoScene("scripts.game", {time=800, effect="crossFade"})
-end
-
-local function gotoBestTimes()
-    composer.gotoScene("scripts.besttimes", {time=800, effect="crossFade"})
-end
 
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
@@ -38,8 +26,8 @@ function scene:create(event)
     local highScoresButton = display.newText(sceneGroup, "Best times", display.contentCenterX, 810, native.systemFont, defaults.font.size)
     highScoresButton:setFillColor(defaults.font.color.red, defaults.font.color.green, defaults.font.color.blue)
 
-    playButton:addEventListener("tap", gotoGame)
-    highScoresButton:addEventListener("tap", gotoBestTimes)
+    playButton:addEventListener("tap", scenes.gotoGame)
+    highScoresButton:addEventListener("tap", scenes.gotoBestTimes)
 end
 
 

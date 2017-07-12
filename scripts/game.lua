@@ -3,6 +3,7 @@ local scene = composer.newScene()
 local solutions = require("scripts.solutions")
 local bgLoader = require("scripts.background")
 local defaults = require("scripts.defaults")
+local scenes = require("scripts.scenes")
 
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
@@ -295,9 +296,12 @@ function scene:show(event)
         timeElapsed = 0
         timeText = display.newText(mainGroup, "Time in seconds: " .. timeElapsed, display.contentCenterX, 80, native.systemFont, defaults.font.size * 0.8)
         timeText:setFillColor(defaults.font.color.red, defaults.font.color.green, defaults.font.color.blue)
+
+        local goBack = display.newText(mainGroup, "Back to Menu", display.contentCenterX, 900, native.systemFont, defaults.font.size * 0.8)
+        goBack:setFillColor(defaults.font.color.red, defaults.font.color.green, defaults.font.color.blue)
+        goBack:addEventListener("tap", scenes.goToMenu)
 	end
 end
-
 
 -- hide()
 function scene:hide(event)
@@ -309,7 +313,7 @@ function scene:hide(event)
 		-- Code here runs when the scene is on screen (but is about to go off screen)
 	elseif ( phase == "did" ) then
         -- Code here runs immediately after the scene goes entirely off screen
-        composer.removeScene("game")
+        composer.removeScene("scripts.game")
 	end
 end
 

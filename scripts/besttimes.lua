@@ -1,6 +1,8 @@
 local composer = require("composer")
-local scene = composer.newScene()
+local scenes = require("scripts.scenes")
 local json = require("json")
+
+local scene = composer.newScene()
 
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
@@ -36,10 +38,6 @@ local function saveScores()
         file:write(json.encode(scoresTable))
         io.close(file)
     end
-end
-
-local function gotoMenu()
-    composer.gotoScene("scripts.menu", {time=800, effect="crossFade"})
 end
 
 -- -----------------------------------------------------------------------------------
@@ -87,7 +85,7 @@ function scene:create( event )
 
     local menuButton = display.newText(sceneGroup, "Menu", display.contentCenterX, 810, native.systemFont, 44)
     menuButton:setFillColor(0.75, 0.78, 1)
-    menuButton:addEventListener("tap", gotoMenu)
+    menuButton:addEventListener("tap", scenes.goToMenu)
 end
 
 
@@ -117,7 +115,7 @@ function scene:hide(event)
 		-- Code here runs when the scene is on screen (but is about to go off screen)
 	elseif (phase == "did") then
 		-- Code here runs immediately after the scene goes entirely off screen
-        composer.removeScene("besttimes")
+        composer.removeScene("scripts.besttimes")
 	end
 end
 
